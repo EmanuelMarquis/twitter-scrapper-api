@@ -6,7 +6,17 @@ __SCRAPFLY = ScrapflyClient(key=os.getenv("SCRAPFLY_API_KEY"))
 
 __ScrapeType = Enum("ScrapeType", ["Undefined", "UserProfile", "UserTweet"])
 
-# TODO: finish generic scrapping function
+# TODO: finish data filtering function
+
+def __filterData(data: dict, keysToFilter: tuple, keysToSubFilter: dict = None):
+
+    filtered: dict = data.fromkeys(keysToFilter)
+    for key, val in filtered.items():
+        if keysToSubFilter and key in keysToSubFilter.keys():
+            filtered[key] = __filterData(data[key], keysToSubFilter[key])
+            continue
+        filtered[key] = data[key]
+    return filtered
 
 def __setScrapeTypeConfig(SCRAPE_TYPE) -> dict:
     if SCRAPE_TYPE == __ScrapeType.UserProfile:
@@ -45,7 +55,23 @@ async def __scrape(URL: str, SCRAPE_TYPE):
         if not xhr["response"]:
             continue
         data = json.loads(xhr["response"]["body"])
-        return data["data"][SCRAPE_TYPE_CONFIG["data"]]["result"]
+        scrappedData : dict = data["data"][SCRAPE_TYPE_CONFIG["data"]]["result"]
+
+        filteredData = {
+            "legacy": __filterData(
+                scrappedData.get("legacy"),
+                ("name", "screen_name","description",
+                 "profile_image_url_https","profile_banner_url","pinned_tweet_ids_str",
+                 "location", "followers_count", "favourites_count", "entities")
+            ),
+            "professional": __filterData(
+                scrappedData.get("professional"),
+                ("category", "professional_type"),
+                # {"category": ("name")}
+            )
+        }
+
+        return filteredData
 
 def scrape_profile(username):
     URL = "https://twitter.com/" + username
