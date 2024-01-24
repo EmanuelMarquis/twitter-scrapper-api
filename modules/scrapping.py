@@ -6,16 +6,41 @@ __SCRAPFLY = ScrapflyClient(key=os.getenv("SCRAPFLY_API_KEY"))
 
 __ScrapeType = Enum("ScrapeType", ["Undefined", "UserProfile", "UserTweet"])
 
-# TODO: finish data filtering function
+"""
+TODO: key to filter (string) bug
+ex: "name" -> {"n": None, "a": None, "m": None, "e": None}
 
-def __filterData(data: dict, keysToFilter: tuple, keysToSubFilter: dict = None):
+TODO: error handling for missing keys and etc.
+"""
+
+def __listToDictionary(list):
+    newDict = {}
+    for value in list:
+        newDict.update(value)
+    return newDict
+
+def __filterData(data: dict, keysToFilter: (tuple, list, str), keysToSubFilter: dict = None):
 
     filtered: dict = data.fromkeys(keysToFilter)
-    for key, val in filtered.items():
-        if keysToSubFilter and key in keysToSubFilter.keys():
-            filtered[key] = __filterData(data[key], keysToSubFilter[key])
-            continue
-        filtered[key] = data[key]
+    if isinstance(keysToFilter, (tuple, list)):
+        for key, val in filtered.items():
+            filtered[key] = data[key]
+    elif isinstance(keysToFilter, str):
+        filtered[keysToFilter] = data[keysToFilter]
+    else:
+        raise Exception("keysToFilter is not tuple or string!!")
+
+    if keysToSubFilter:
+        for key, val in keysToSubFilter.items():
+            if filtered.get(key):
+                if isinstance(filtered[key], (list, tuple)):
+                    keyDict = __listToDictionary(filtered[key])
+                    filtered[key] = __filterData(keyDict, val)
+                elif isinstance(filtered[key], str):
+                    filtered[key] = __filterData(filtered[key], key)
+                else:
+                    raise Exception("keysToFilter is not tuple or string!!")
+
     return filtered
 
 def __setScrapeTypeConfig(SCRAPE_TYPE) -> dict:
@@ -67,8 +92,8 @@ async def __scrape(URL: str, SCRAPE_TYPE):
             "professional": __filterData(
                 scrappedData.get("professional"),
                 ("category", "professional_type"),
-                # {"category": ("name")}
-            )
+                {"category": "name"}
+            ) if scrappedData.get("professional") else None
         }
 
         return filteredData
