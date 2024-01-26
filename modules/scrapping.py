@@ -1,47 +1,12 @@
 import json, os, asyncio
 from enum import Enum
 from scrapfly import ScrapeConfig, ScrapflyClient
+from .filter import filterData
 
 __SCRAPFLY = ScrapflyClient(key=os.getenv("SCRAPFLY_API_KEY"))
 
 __ScrapeType = Enum("ScrapeType", ["Undefined", "UserProfile", "UserTweet"])
 
-"""
-TODO: key to filter (string) bug
-ex: "name" -> {"n": None, "a": None, "m": None, "e": None}
-
-TODO: error handling for missing keys and etc.
-"""
-
-def __listToDictionary(list):
-    newDict = {}
-    for value in list:
-        newDict.update(value)
-    return newDict
-
-def __filterData(data: dict, keysToFilter: (tuple, list, str), keysToSubFilter: dict = None):
-
-    filtered: dict = data.fromkeys(keysToFilter)
-    if isinstance(keysToFilter, (tuple, list)):
-        for key, val in filtered.items():
-            filtered[key] = data[key]
-    elif isinstance(keysToFilter, str):
-        filtered[keysToFilter] = data[keysToFilter]
-    else:
-        raise Exception("keysToFilter is not tuple or string!!")
-
-    if keysToSubFilter:
-        for key, val in keysToSubFilter.items():
-            if filtered.get(key):
-                if isinstance(filtered[key], (list, tuple)):
-                    keyDict = __listToDictionary(filtered[key])
-                    filtered[key] = __filterData(keyDict, val)
-                elif isinstance(filtered[key], str):
-                    filtered[key] = __filterData(filtered[key], key)
-                else:
-                    raise Exception("keysToFilter is not tuple or string!!")
-
-    return filtered
 
 def __setScrapeTypeConfig(SCRAPE_TYPE) -> dict:
     if SCRAPE_TYPE == __ScrapeType.UserProfile:
@@ -83,13 +48,13 @@ async def __scrape(URL: str, SCRAPE_TYPE):
         scrappedData : dict = data["data"][SCRAPE_TYPE_CONFIG["data"]]["result"]
 
         filteredData = {
-            "legacy": __filterData(
+            "legacy": filterData(
                 scrappedData.get("legacy"),
                 ("name", "screen_name","description",
                  "profile_image_url_https","profile_banner_url","pinned_tweet_ids_str",
                  "location", "followers_count", "favourites_count", "entities")
             ),
-            "professional": __filterData(
+            "professional": filterData(
                 scrappedData.get("professional"),
                 ("category", "professional_type"),
                 {"category": "name"}
