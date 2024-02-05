@@ -47,21 +47,39 @@ async def __scrape(URL: str, SCRAPE_TYPE):
         data = json.loads(xhr["response"]["body"])
         scrappedData : dict = data["data"][SCRAPE_TYPE_CONFIG["data"]]["result"]
 
-        filteredData = {
-            "legacy": filterData(
-                scrappedData.get("legacy"),
-                ("name", "screen_name","description",
-                 "profile_image_url_https","profile_banner_url","pinned_tweet_ids_str",
-                 "location", "followers_count", "favourites_count", "entities")
-            ),
-            "professional": filterData(
-                scrappedData.get("professional"),
-                ("category", "professional_type"),
-                {"category": "name"}
-            ) if scrappedData.get("professional") else None
-        }
+        print(scrappedData)
 
-        return filteredData
+        if SCRAPE_TYPE == __ScrapeType.UserProfile:
+            # return filtered user data
+            return {
+                "legacy": filterData(
+                    scrappedData.get("legacy"),
+                    ("name", "screen_name", "description",
+                     "profile_image_url_https", "profile_banner_url", "pinned_tweet_ids_str",
+                     "location", "followers_count", "favourites_count", "entities")
+                ),
+                "professional": filterData(
+                    scrappedData.get("professional"),
+                    ("category", "professional_type"),
+                    {"category": "name"}
+                ) if scrappedData.get("professional") else None
+            }
+        elif SCRAPE_TYPE == __ScrapeType.UserTweet:
+            # return filtered tweet data
+            return {
+                "legacy": filterData(scrappedData.get("legacy"),
+                    ("bookmark_count","created_at", "favorite_count",
+                    "quote_count", "reply_count", "retweet_count", "full_text", "entities"),
+                    # {
+                    #     "entities": ("hashtags", "urls", "user_mentions", "symbols", "timestamps", "media")
+                    #  }
+                ),
+                "views": filterData(scrappedData.get("views"), "count")
+            }
+        elif SCRAPE_TYPE == None or SCRAPE_TYPE == __ScrapeType.Undefined:
+            raise Exception("SCRAPE_TYPE undefined!")
+        else:
+            raise Exception("SCRAPE_TYPE invalid value!")
 
 def scrape_profile(username):
     URL = "https://twitter.com/" + username
