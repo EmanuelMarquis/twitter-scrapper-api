@@ -28,7 +28,7 @@ def filterData(data: dict, keysToFilter: (tuple, list, str), keysToSubFilter: di
         elif isinstance(filtered.get(key), str):
             filtered[key] = filterData(filtered[key], key)
         elif isinstance(filtered.get(key), type(None)):
-            raise KeyError("key doesn't exit or its value is NONE!")
+            raise KeyError("key {key_name} doesn't exit or its value is NONE!".format(key_name=key))
         else:
-            raise TypeError("key is not a list, tuple, or string!")
+            raise TypeError("key {key_name} is not a list, tuple, or string!".format(key_name=key))
     return filtered
