@@ -1,6 +1,8 @@
 import flask.app
-from routes import index, user, tweet
+from routes import index, user, tweet, auth, dashboard
+
+routes = [index, user, tweet, auth, dashboard]
+
 def initRoutes(app : flask.app.Flask):
-    index.init(app)
-    user.init(app)
-    tweet.init(app)
+    for route in routes:
+        route.init(app)
