@@ -8,11 +8,11 @@ class Authenticator:
             os.getenv("PROJECT_KEY"),
         )
 
-    def signInWithGoogle(self):
+    def signInWithGoogle(self, redirectTo):
         return self._client.auth.sign_in_with_oauth({
             "provider": "google",
             "options": {
-                "redirect_to": os.getenv("SIGN_IN_REDIRECT_TO")
+                "redirect_to": redirectTo
             }
         })
 
